@@ -7,7 +7,6 @@ import {
   Pressable,
   FlatList,
   useWindowDimensions,
-  Linking,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,12 +17,17 @@ import { placeById } from '../../src/data/places';
 import { categoryById } from '../../src/data/categories';
 import { Rating, PriceLevel, Tag } from '../../src/components/ui';
 import { LinearGradientView } from '../../src/components/Gradient';
+import { useFavorites } from '../../src/favorites/FavoritesProvider';
+import { useLocation } from '../../src/integrations/LocationProvider';
+import { ReviewsSection } from '../../src/components/ReviewsSection';
 import {
   InfoRow,
   MapCard,
   Menu,
+  callPhone,
   openMaps,
   openWhatsApp,
+  sharePlace,
 } from '../../src/components/PlaceDetailParts';
 import { colors } from '../../src/theme/colors';
 import { fonts, fontSize, radius, spacing, shadow } from '../../src/theme/tokens';
@@ -34,7 +38,8 @@ export default function PlaceDetail() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const [photo, setPhoto] = React.useState(0);
-  const [fav, setFav] = React.useState(false);
+  const { isFavorite, toggle } = useFavorites();
+  const { labelFor } = useLocation();
 
   const place = placeById(String(id));
   if (!place) {
@@ -95,7 +100,7 @@ export default function PlaceDetail() {
             <View style={styles.metaDot} />
             <View style={styles.metaLoc}>
               <Ionicons name="location-outline" size={15} color={colors.textMuted} />
-              <Text style={styles.metaLocText}>{place.neighborhood} · {place.distanceKm} km</Text>
+              <Text style={styles.metaLocText}>{labelFor(place)}</Text>
             </View>
           </View>
 
@@ -109,11 +114,11 @@ export default function PlaceDetail() {
           {/* Ações rápidas de contato */}
           <View style={styles.quickRow}>
             <QuickAction icon="navigate" label="Rotas" onPress={() => openMaps(place)} />
-            {place.phone && <QuickAction icon="call" label="Ligar" onPress={() => Linking.openURL(`tel:${place.phone}`)} />}
+            {place.phone && <QuickAction icon="call" label="Ligar" onPress={() => callPhone(place.phone)} />}
             {place.whatsapp && (
               <QuickAction icon="logo-whatsapp" label="WhatsApp" onPress={() => openWhatsApp(place.whatsapp, place.name)} />
             )}
-            <QuickAction icon="share-social" label="Compartilhar" onPress={() => {}} />
+            <QuickAction icon="share-social" label="Compartilhar" onPress={() => void sharePlace(place)} />
           </View>
 
           <Divider />
@@ -138,7 +143,7 @@ export default function PlaceDetail() {
               {place.address}
             </InfoRow>
             {place.phone && (
-              <InfoRow icon="call-outline" title="Telefone" onPress={() => Linking.openURL(`tel:${place.phone}`)} actionIcon="call">
+              <InfoRow icon="call-outline" title="Telefone" onPress={() => callPhone(place.phone)} actionIcon="call">
                 {place.phone}
               </InfoRow>
             )}
@@ -207,28 +212,9 @@ export default function PlaceDetail() {
             </Section>
           )}
 
-          {/* Avaliações */}
-          {place.reviews && place.reviews.length > 0 && (
-            <Section title={`Avaliações (${place.reviewsCount.toLocaleString('pt-BR')})`}>
-              <View style={{ gap: spacing.md }}>
-                {place.reviews.map((r, i) => (
-                  <View key={i} style={styles.review}>
-                    <View style={styles.reviewHead}>
-                      <View style={styles.avatar}>
-                        <Text style={styles.avatarText}>{r.author.charAt(0)}</Text>
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.reviewAuthor}>{r.author}</Text>
-                        <Text style={styles.reviewDate}>{r.date}</Text>
-                      </View>
-                      <Rating value={r.rating} size={fontSize.xs} />
-                    </View>
-                    <Text style={styles.reviewText}>{r.comment}</Text>
-                  </View>
-                ))}
-              </View>
-            </Section>
-          )}
+          <View style={{ marginTop: spacing.xl }}>
+            <ReviewsSection place={place} />
+          </View>
         </View>
       </ScrollView>
 
@@ -236,8 +222,8 @@ export default function PlaceDetail() {
       <View style={[styles.topBar, { top: insets.top + spacing.sm }]}>
         <FloatBtn icon="arrow-back" onPress={() => router.back()} />
         <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-          <FloatBtn icon={fav ? 'heart' : 'heart-outline'} color={fav ? colors.danger : colors.navy} onPress={() => setFav((v) => !v)} />
-          <FloatBtn icon="share-social-outline" onPress={() => {}} />
+          <FloatBtn icon={isFavorite(place.id) ? 'heart' : 'heart-outline'} color={isFavorite(place.id) ? colors.danger : colors.navy} onPress={() => toggle(place.id)} />
+          <FloatBtn icon="share-social-outline" onPress={() => void sharePlace(place)} />
         </View>
       </View>
 

@@ -7,6 +7,7 @@ import {
   Pressable,
   FlatList,
   useWindowDimensions,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -21,6 +22,8 @@ import { LinearGradientView } from '../src/components/Gradient';
 import { FilterSheet, Filters, defaultFilters } from '../src/components/FilterSheet';
 import { BottomNav } from '../src/components/BottomNav';
 import { WeatherPanel } from '../src/components/WeatherPanel';
+import { useFavorites } from '../src/favorites/FavoritesProvider';
+import { openLocationSettings, useLocation } from '../src/integrations/LocationProvider';
 
 import { places, featuredPlaces } from '../src/data/places';
 import { categoryById } from '../src/data/categories';
@@ -37,6 +40,8 @@ export default function Home() {
   const [category, setCategory] = React.useState<CategoryId | null>(null);
   const [filters, setFilters] = React.useState<Filters>(defaultFilters);
   const [filterOpen, setFilterOpen] = React.useState(false);
+  const { ids } = useFavorites();
+  const { label, granted, kmTo, refresh } = useLocation();
 
   const openPlace = (p: Place) => router.push(`/place/${p.id}`);
 
@@ -57,9 +62,9 @@ export default function Home() {
       return true;
     });
     if (filters.sort === 'avaliacao') list = [...list].sort((a, b) => b.rating - a.rating);
-    if (filters.sort === 'distancia') list = [...list].sort((a, b) => (a.distanceKm ?? 99) - (b.distanceKm ?? 99));
+    if (filters.sort === 'distancia') list = [...list].sort((a, b) => kmTo(a) - kmTo(b));
     return list;
-  }, [query, category, filters]);
+  }, [query, category, filters, kmTo]);
 
   // Grade responsiva de recomendados
   const gutter = spacing.xl;
@@ -85,16 +90,33 @@ export default function Home() {
         <View style={styles.headerRow}>
           <Logo size={26} onDark />
           <View style={styles.headerActions}>
-            <HeaderIcon icon="heart-outline" />
+            <HeaderIcon icon={ids.length > 0 ? 'heart' : 'heart-outline'} onPress={() => router.navigate('/favoritos')} />
             <HeaderIcon icon="notifications-outline" dot />
           </View>
         </View>
 
-        <View style={styles.locationRow}>
+        <Pressable
+          style={styles.locationRow}
+          onPress={() => {
+            if (granted) {
+              void refresh();
+              return;
+            }
+            Alert.alert(
+              'Localização',
+              'O FozGo usa o GPS para calcular distâncias e o que está perto de você.',
+              [
+                { text: 'Agora não', style: 'cancel' },
+                { text: 'Permitir', onPress: () => void refresh() },
+                { text: 'Ajustes', onPress: () => void openLocationSettings() },
+              ],
+            );
+          }}
+        >
           <Ionicons name="location" size={16} color="#fff" />
-          <Text style={styles.locationText}>Foz do Iguaçu, PR</Text>
+          <Text style={styles.locationText}>{label}</Text>
           <Ionicons name="chevron-down" size={16} color="rgba(255,255,255,0.9)" />
-        </View>
+        </Pressable>
         <Text style={styles.headline}>Tudo o que você precisa{'\n'}em Foz do Iguaçu</Text>
       </LinearGradientView>
 
@@ -164,7 +186,7 @@ export default function Home() {
               <SectionHeader title="Perto de você" onAction={() => setFilters({ ...defaultFilters, sort: 'distancia' })} />
               <View style={{ gap: spacing.md }}>
                 {[...places]
-                  .sort((a, b) => (a.distanceKm ?? 99) - (b.distanceKm ?? 99))
+                  .sort((a, b) => kmTo(a) - kmTo(b))
                   .slice(0, 4)
                   .map((p) => (
                     <PlaceCard key={p.id} place={p} onPress={() => openPlace(p)} />
@@ -190,9 +212,9 @@ export default function Home() {
   );
 }
 
-function HeaderIcon({ icon, dot }: { icon: keyof typeof Ionicons.glyphMap; dot?: boolean }) {
+function HeaderIcon({ icon, dot, onPress }: { icon: keyof typeof Ionicons.glyphMap; dot?: boolean; onPress?: () => void }) {
   return (
-    <Pressable style={styles.headerIcon}>
+    <Pressable style={styles.headerIcon} onPress={onPress}>
       <Ionicons name={icon} size={20} color="#fff" />
       {dot && <View style={styles.badgeDot} />}
     </Pressable>

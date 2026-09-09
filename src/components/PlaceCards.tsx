@@ -4,8 +4,10 @@ import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradientView } from './Gradient';
 import { Rating, PriceLevel, Pill, Tag } from './ui';
+import { FavoriteHeart } from './FavoriteHeart';
 import { Place } from '../data/types';
 import { categoryById } from '../data/categories';
+import { useLocation } from '../integrations/LocationProvider';
 import { colors } from '../theme/colors';
 import { fonts, fontSize, radius, spacing, shadow } from '../theme/tokens';
 
@@ -14,6 +16,7 @@ const BLUR = 'L6PZfSi_.AyE_3t7t7R**0o#DgR4';
 /** Card grande de destaque (carrossel horizontal). */
 export function FeaturedCard({ place, onPress }: { place: Place; onPress: () => void }) {
   const cat = categoryById(place.category);
+  const { labelFor } = useLocation();
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.feat, pressed && { transform: [{ scale: 0.98 }] }]}>
       <Image source={place.photos[0]} style={styles.featImg} contentFit="cover" placeholder={BLUR} transition={250} />
@@ -23,9 +26,7 @@ export function FeaturedCard({ place, onPress }: { place: Place; onPress: () => 
       />
       <View style={styles.featTop}>
         <Pill icon="star" label={`${place.rating.toFixed(1)}`} />
-        <View style={styles.heart}>
-          <Ionicons name="heart-outline" size={18} color={colors.navy} />
-        </View>
+        <FavoriteHeart placeId={place.id} />
       </View>
       <View style={styles.featBottom}>
         <View style={[styles.catBadge, { backgroundColor: cat.base }]}>
@@ -41,7 +42,7 @@ export function FeaturedCard({ place, onPress }: { place: Place; onPress: () => 
         <View style={styles.featMeta}>
           <Ionicons name="location-outline" size={14} color="rgba(255,255,255,0.85)" />
           <Text style={styles.featMetaText} numberOfLines={1}>
-            {place.neighborhood} · {place.distanceKm} km
+            {labelFor(place)}
           </Text>
         </View>
       </View>
@@ -52,9 +53,13 @@ export function FeaturedCard({ place, onPress }: { place: Place; onPress: () => 
 /** Card horizontal para listas (imagem à esquerda). */
 export function PlaceCard({ place, onPress }: { place: Place; onPress: () => void }) {
   const cat = categoryById(place.category);
+  const { labelFor } = useLocation();
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.card, pressed && { opacity: 0.92 }]}>
-      <Image source={place.photos[0]} style={styles.cardImg} contentFit="cover" placeholder={BLUR} transition={200} />
+      <View>
+        <Image source={place.photos[0]} style={styles.cardImg} contentFit="cover" placeholder={BLUR} transition={200} />
+        <FavoriteHeart placeId={place.id} size={16} style={styles.cardHeart} />
+      </View>
       <View style={styles.cardBody}>
         <View style={styles.cardTopRow}>
           <Tag label={cat.label} color={cat.base} tint={cat.tint} />
@@ -70,7 +75,7 @@ export function PlaceCard({ place, onPress }: { place: Place; onPress: () => voi
           <View style={styles.cardLoc}>
             <Ionicons name="location-outline" size={13} color={colors.textMuted} />
             <Text style={styles.cardLocText} numberOfLines={1}>
-              {place.neighborhood} · {place.distanceKm} km
+              {labelFor(place)}
             </Text>
           </View>
           <PriceLevel level={place.priceRange} size={fontSize.xs} />
@@ -120,14 +125,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: spacing.md,
   },
-  heart: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   featBottom: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: spacing.lg, gap: 4 },
   catBadge: {
     flexDirection: 'row',
@@ -158,6 +155,7 @@ const styles = StyleSheet.create({
     ...(shadow.soft as object),
   },
   cardImg: { width: 104, height: 104, borderRadius: radius.md, backgroundColor: colors.surfaceAlt },
+  cardHeart: { position: 'absolute', top: 6, right: 6, width: 28, height: 28, borderRadius: 14 },
   cardBody: { flex: 1, justifyContent: 'space-between', paddingVertical: 2, paddingRight: 4 },
   cardTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   cardTitle: { fontFamily: fonts.heading, fontSize: fontSize.lg, color: colors.navy, letterSpacing: -0.3 },

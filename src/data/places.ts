@@ -10,7 +10,7 @@ export const places: Place[] = [
     tagline: 'Uma das 7 Maravilhas da Natureza',
     description:
       'Conjunto de 275 quedas d’água que se estende por quase 3 km na fronteira entre Brasil e Argentina, dentro do Parque Nacional do Iguaçu (Patrimônio Natural da Humanidade). As trilhas levam a mirantes com vista privilegiada da Garganta do Diabo.',
-    photos: [img.falls, img.river, img.forest],
+    photos: [img.cataratas1, img.cataratas2, img.cataratas3, img.cataratas4],
     neighborhood: 'Parque Nacional do Iguaçu',
     address: 'Rodovia BR-469, Km 18 — Foz do Iguaçu, PR',
     coords: { lat: -25.6953, lng: -54.4367 },
@@ -46,7 +46,7 @@ export const places: Place[] = [
     tagline: 'Onde Brasil, Argentina e Paraguai se encontram',
     description:
       'Complexo turístico às margens do encontro dos rios Iguaçu e Paraná, com vista para os obeliscos dos três países. Ao entardecer, apresentação de dança e show de luzes contam a história da tríplice fronteira.',
-    photos: [img.river, img.forest, img.falls],
+    photos: [img.marco1, img.marco2, img.marco3],
     neighborhood: 'Jardim Eldorado',
     address: 'Av. General Meira, s/n — Foz do Iguaçu, PR',
     coords: { lat: -25.5946, lng: -54.5936 },
@@ -70,7 +70,7 @@ export const places: Place[] = [
     tagline: 'Voe entre tucanos e araras na Mata Atlântica',
     description:
       'Único parque do mundo focado em aves da Mata Atlântica. Viveiros imersivos permitem caminhar entre araras, tucanos e flamingos, além de conhecer o trabalho de conservação de espécies ameaçadas.',
-    photos: [img.parrot, img.bird, img.forest],
+    photos: [img.aves1, img.aves2, img.aves3, img.aves4],
     neighborhood: 'Vila Yolanda',
     address: 'Av. das Cataratas, Km 17,1 — Foz do Iguaçu, PR',
     coords: { lat: -25.6188, lng: -54.4832 },
@@ -93,7 +93,7 @@ export const places: Place[] = [
     tagline: 'A maior geradora de energia limpa do planeta',
     description:
       'Visite uma das maiores hidrelétricas do mundo. O passeio panorâmico mostra a barragem e o vertedouro; a Iluminação de Itaipu, às sextas e sábados, ilumina a estrutura em um espetáculo à parte.',
-    photos: [img.river, img.forest, img.falls],
+    photos: [img.itaipu1, img.itaipu2, img.itaipu3],
     neighborhood: 'Itaipu',
     address: 'Av. Tancredo Neves, 6702 — Foz do Iguaçu, PR',
     coords: { lat: -25.4083, lng: -54.5889 },
@@ -427,7 +427,7 @@ export const places: Place[] = [
     tagline: 'Bote até a base das Cataratas',
     description:
       'Aventura completa dentro do parque: trilha de veículo elétrico pela mata, caminhada e o inesquecível passeio de bote que chega bem perto das quedas. Prepare-se para se molhar!',
-    photos: [img.boat, img.boat2, img.falls],
+    photos: [img.macuco, img.cataratas2, img.cataratas5],
     neighborhood: 'Parque Nacional do Iguaçu',
     address: 'Rodovia BR-469, Km 25 — Foz do Iguaçu, PR',
     coords: { lat: -25.6836, lng: -54.4441 },
@@ -455,7 +455,7 @@ export const places: Place[] = [
     tagline: 'Pôr do sol no Lago de Itaipu',
     description:
       'Passeio náutico pelo Lago de Itaipu com paradas para banho, música e pôr do sol. Opções diurnas e ao entardecer com bordo bar.',
-    photos: [img.boat2, img.river, img.boat],
+    photos: [img.itaipuLago, img.itaipu1, img.boat2],
     neighborhood: 'Três Lagoas',
     address: 'Rua das Palmeiras, s/n — Marina, Foz do Iguaçu, PR',
     coords: { lat: -25.4457, lng: -54.5497 },
@@ -481,7 +481,7 @@ export const places: Place[] = [
     tagline: 'Economize comprando os dois juntos',
     description:
       'Pacote com ingresso das Cataratas do Iguaçu e do Macuco Safari com desconto e entrada prioritária. Voucher digital enviado na hora pelo WhatsApp.',
-    photos: [img.falls, img.boat, img.forest],
+    photos: [img.cataratas1, img.macuco, img.cataratas6],
     neighborhood: 'Venda online',
     address: 'Retirada no Parque Nacional do Iguaçu — BR-469',
     coords: { lat: -25.6953, lng: -54.4367 },
@@ -510,7 +510,7 @@ export const places: Place[] = [
     tagline: 'Passeios e atrações com preço promocional',
     description:
       'Plataforma local de ingressos com desconto para as principais atrações de Foz: Parque das Aves, Dreamland, Itaipu e mais. Compre com antecedência e evite filas.',
-    photos: [img.parrot, img.falls, img.river],
+    photos: [img.aves1, img.cataratas1, img.itaipu1],
     neighborhood: 'Venda online',
     address: 'Av. Brasil, 900 — Centro (loja física), Foz do Iguaçu, PR',
     coords: { lat: -25.5475, lng: -54.5862 },
@@ -639,3 +639,14 @@ export const places: Place[] = [
 export const featuredPlaces = places.filter((p) => p.featured);
 export const placeById = (id: string) => places.find((p) => p.id === id);
 export const placesByCategory = (cat: string) => places.filter((p) => p.category === cat);
+
+/** Mais visitados (avaliações como proxy de movimento). */
+export const mustVisitPlaces = [...places]
+  .sort((a, b) => b.reviewsCount - a.reviewsCount)
+  .slice(0, 8);
+
+/** Melhor avaliados — recorte "imperdível". */
+export const imperdiblePlaces = [...places]
+  .filter((p) => p.rating >= 4.7)
+  .sort((a, b) => b.rating - a.rating || b.reviewsCount - a.reviewsCount)
+  .slice(0, 8);

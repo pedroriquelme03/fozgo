@@ -1,29 +1,16 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, Linking, Platform } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradientView } from './Gradient';
 import { Place, MenuSection } from '../data/types';
+import { openMaps } from '../integrations/actions';
 import { colors } from '../theme/colors';
 import { fonts, fontSize, radius, spacing, shadow } from '../theme/tokens';
 
+export { openMaps, openWhatsApp, callPhone, sharePlace } from '../integrations/actions';
+
 const brl = (n: number) => `R$ ${n.toFixed(2).replace('.', ',')}`;
-
-export function openMaps(place: Place) {
-  const { lat, lng } = place.coords;
-  const label = encodeURIComponent(place.name);
-  const url = Platform.select({
-    ios: `http://maps.apple.com/?q=${label}&ll=${lat},${lng}`,
-    default: `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`,
-  });
-  Linking.openURL(url!);
-}
-
-export function openWhatsApp(number?: string, name?: string) {
-  if (!number) return;
-  const msg = encodeURIComponent(`Olá! Vi o ${name ?? 'local'} no FozGo e gostaria de mais informações.`);
-  Linking.openURL(`https://wa.me/${number}?text=${msg}`);
-}
 
 /** Bloco de informação com ícone. */
 export function InfoRow({

@@ -1,8 +1,9 @@
 import React from 'react';
+import * as Crypto from 'expo-crypto';
 import { useAuth } from '../auth/AuthProvider';
 import { getActorName } from '../auth/session';
 import { StoredReport, StoredReview, loadReports, loadReviews, saveReports, saveReviews } from './db';
-import { fetchRemoteReviews, pushRemoteReport, pushRemoteReviews } from './remote';
+import { fetchRemoteReviews, mergeReviews, pushRemoteReport, pushRemoteReviews } from './remote';
 
 type ReviewsContextValue = {
   ready: boolean;
@@ -32,13 +33,11 @@ export function ReviewsProvider({ children }: { children: React.ReactNode }) {
       try {
         const [local, localReports] = await Promise.all([loadReviews(), loadReports()]);
         let next = local;
-        if (user) {
-          const remote = await fetchRemoteReviews(user.id);
-          if (remote) {
-            next = [...remote.filter((r) => !local.some((l) => l.id === r.id)), ...local];
-            await saveReviews(next);
-            await pushRemoteReviews(user.id, next);
-          }
+        const remote = await fetchRemoteReviews(user?.id ?? '');
+        if (remote) {
+          next = mergeReviews(local, remote);
+          await saveReviews(next);
+          if (user) await pushRemoteReviews(user.id, next);
         }
         if (alive) {
           setReviews(next);
@@ -74,7 +73,7 @@ export function ReviewsProvider({ children }: { children: React.ReactNode }) {
       const row: StoredReview = existing
         ? { ...existing, rating, comment: comment.trim(), updatedAt: now }
         : {
-            id: `rev-${now}-${Math.random().toString(36).slice(2, 7)}`,
+            id: user ? Crypto.randomUUID() : `rev-${now}-${Math.random().toString(36).slice(2, 7)}`,
             placeId,
             userId: actorId,
             author: getActorName(),
@@ -88,7 +87,7 @@ export function ReviewsProvider({ children }: { children: React.ReactNode }) {
         : [row, ...reviews];
       await persistReviews(next);
     },
-    [actorId, persistReviews, reviews],
+    [actorId, persistReviews, reviews, user],
   );
 
   const remove = React.useCallback(

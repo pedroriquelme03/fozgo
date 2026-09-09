@@ -40,7 +40,7 @@ export default function Perfil() {
   const confirmDelete = () => {
     Alert.alert(
       'Excluir conta',
-      'Isso apaga seu cadastro, favoritos e avaliações neste aparelho. Não dá para desfazer.',
+      'Isso apaga sua conta no FozGo, junto com favoritos e avaliações. Não dá para desfazer.',
       [
         { text: 'Cancelar', style: 'cancel' },
         {

@@ -27,7 +27,7 @@ import {
   subscribeCustomItineraries,
   Itinerary,
 } from '../src/data/itineraries';
-import { mustVisitPlaces, imperdiblePlaces, placeById, places } from '../src/data/places';
+import { usePlaces } from '../src/places/PlacesProvider';
 import { Place } from '../src/data/types';
 import { colors } from '../src/theme/colors';
 import { fonts, fontSize, radius, spacing, shadow } from '../src/theme/tokens';
@@ -35,6 +35,7 @@ import { fonts, fontSize, radius, spacing, shadow } from '../src/theme/tokens';
 export default function Explorar() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { mustVisitPlaces, imperdiblePlaces } = usePlaces();
   const { roteiro, novo } = useLocalSearchParams<{ roteiro?: string; novo?: string }>();
   const mine = React.useSyncExternalStore(subscribeCustomItineraries, getCustomItineraries, getCustomItineraries);
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
@@ -183,6 +184,7 @@ function HighlightCard({ place, badge, onPress }: { place: Place; badge: string;
 }
 
 function ItineraryCard({ itinerary, onPress }: { itinerary: Itinerary; onPress: () => void }) {
+  const { placeById } = usePlaces();
   const cover = placeById(itinerary.coverPlaceId)?.photos[0];
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.card, pressed && { transform: [{ scale: 0.985 }] }]}>
@@ -221,6 +223,7 @@ function ItineraryDetail({
   onSelectStop: (id: string) => void;
   onOpen: (p: Place) => void;
 }) {
+  const { placeById } = usePlaces();
   return (
     <View style={{ paddingHorizontal: spacing.xl, marginTop: spacing.md }}>
       <View style={[styles.detailTag, { backgroundColor: itinerary.tint }]}>
@@ -267,6 +270,7 @@ function ItineraryDetail({
 }
 
 function Composer({ onCancel, onSave }: { onCancel: () => void; onSave: (it: Itinerary) => void }) {
+  const { places } = usePlaces();
   const [title, setTitle] = React.useState('');
   const [picked, setPicked] = React.useState<string[]>([]);
 

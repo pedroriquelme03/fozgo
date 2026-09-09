@@ -25,7 +25,7 @@ import { WeatherPanel } from '../src/components/WeatherPanel';
 import { useFavorites } from '../src/favorites/FavoritesProvider';
 import { openLocationSettings, useLocation } from '../src/integrations/LocationProvider';
 
-import { places, featuredPlaces } from '../src/data/places';
+import { usePlaces } from '../src/places/PlacesProvider';
 import { categoryById } from '../src/data/categories';
 import { CategoryId, Place } from '../src/data/types';
 import { colors } from '../src/theme/colors';
@@ -41,6 +41,7 @@ export default function Home() {
   const [filters, setFilters] = React.useState<Filters>(defaultFilters);
   const [filterOpen, setFilterOpen] = React.useState(false);
   const { ids } = useFavorites();
+  const { places, featuredPlaces } = usePlaces();
   const { label, granted, kmTo, refresh } = useLocation();
 
   const openPlace = (p: Place) => router.push(`/place/${p.id}`);
@@ -64,7 +65,7 @@ export default function Home() {
     if (filters.sort === 'avaliacao') list = [...list].sort((a, b) => b.rating - a.rating);
     if (filters.sort === 'distancia') list = [...list].sort((a, b) => kmTo(a) - kmTo(b));
     return list;
-  }, [query, category, filters, kmTo]);
+  }, [places, query, category, filters, kmTo]);
 
   // Grade responsiva de recomendados
   const gutter = spacing.xl;

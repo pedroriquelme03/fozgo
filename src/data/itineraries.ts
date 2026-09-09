@@ -115,8 +115,8 @@ export const itineraries: Itinerary[] = [
 export const itineraryById = (id: string, extras: Itinerary[] = []) =>
   extras.find((i) => i.id === id) ?? itineraries.find((i) => i.id === id);
 
-export const placesInItinerary = (it: Itinerary): Place[] =>
-  it.stops.map((s) => placeById(s.placeId)).filter((p): p is Place => p != null);
+export const placesInItinerary = (it: Itinerary, lookup = placeById): Place[] =>
+  it.stops.map((s) => lookup(s.placeId)).filter((p): p is Place => p != null);
 
 const STOP_HOURS = ['09:00', '11:30', '14:00', '16:30', '19:00', '21:00'];
 

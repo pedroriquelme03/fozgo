@@ -8,7 +8,7 @@ import { BottomNav } from '../src/components/BottomNav';
 import { PlaceCard } from '../src/components/PlaceCards';
 import { useAuth } from '../src/auth/AuthProvider';
 import { useFavorites } from '../src/favorites/FavoritesProvider';
-import { placeById } from '../src/data/places';
+import { usePlaces } from '../src/places/PlacesProvider';
 import { colors } from '../src/theme/colors';
 import { fonts, fontSize, radius, spacing } from '../src/theme/tokens';
 
@@ -16,6 +16,7 @@ export default function Favoritos() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { ids } = useFavorites();
+  const { placeById } = usePlaces();
   const { user } = useAuth();
   const list = ids.map((id) => placeById(id)).filter((p): p is NonNullable<typeof p> => p != null);
   const where = user ? 'na sua conta' : 'neste aparelho';

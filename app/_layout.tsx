@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider } from '../src/auth/AuthProvider';
 import { LocationProvider } from '../src/integrations/LocationProvider';
+import { PlacesProvider } from '../src/places/PlacesProvider';
 import { FavoritesProvider } from '../src/favorites/FavoritesProvider';
 import { ReviewsProvider } from '../src/reviews/ReviewsProvider';
 import { useAppFonts } from '../src/hooks/useAppFonts';
@@ -19,6 +20,7 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <AuthProvider>
         <LocationProvider>
+        <PlacesProvider>
         <FavoritesProvider>
         <ReviewsProvider>
         <StatusBar style="dark" />
@@ -44,6 +46,7 @@ export default function RootLayout() {
         )}
         </ReviewsProvider>
         </FavoritesProvider>
+        </PlacesProvider>
         </LocationProvider>
         </AuthProvider>
       </SafeAreaProvider>

@@ -1,11 +1,10 @@
 import React from 'react';
-import * as Crypto from 'expo-crypto';
-import { getGuestId, loadReviews, saveReviews } from '../reviews/db';
-import { loadSessionId, loadUsers, saveSessionId, saveUsers } from './db';
+import type { Session } from '@supabase/supabase-js';
+import { getGuestId } from '../reviews/db';
+import { supabase, authErrorMessage } from '../lib/supabase';
 import { migrateGuestToUser, purgeUserData } from './migrate';
-import { hashPassword, newSalt, passwordsMatch } from './password';
 import { setSession } from './session';
-import { PublicUser, UserAccount, toPublicUser } from './types';
+import { PublicUser } from './types';
 
 type AuthContextValue = {
   ready: boolean;
@@ -15,7 +14,7 @@ type AuthContextValue = {
   signIn: (email: string, password: string) => Promise<string | null>;
   signOut: () => Promise<void>;
   updateProfile: (input: { name: string; phone: string; password?: string }) => Promise<string | null>;
-  resetPassword: (email: string, newPassword: string) => Promise<string | null>;
+  resetPassword: (email: string) => Promise<string | null>;
   deleteAccount: () => Promise<void>;
 };
 
@@ -27,6 +26,16 @@ function normEmail(email: string) {
 
 function digits(phone: string) {
   return phone.replace(/\D/g, '');
+}
+
+function toPublicUser(id: string, name: string, email: string, phone: string, createdAt: string | number): PublicUser {
+  return {
+    id,
+    name,
+    email,
+    phone,
+    createdAt: typeof createdAt === 'number' ? createdAt : new Date(createdAt).getTime(),
+  };
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -41,34 +50,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSession({ userId: next?.id ?? null, name: next?.name ?? null });
   }, []);
 
+  const hydrateFromSession = React.useCallback(
+    async (session: Session | null, guest: string) => {
+      if (!session?.user) {
+        applyUser(null, guest);
+        return;
+      }
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('name, phone, email, created_at')
+        .eq('id', session.user.id)
+        .maybeSingle();
+      const meta = session.user.user_metadata ?? {};
+      applyUser(
+        toPublicUser(
+          session.user.id,
+          profile?.name || meta.name || session.user.email?.split('@')[0] || 'Você',
+          profile?.email || session.user.email || '',
+          profile?.phone || meta.phone || '',
+          profile?.created_at || session.user.created_at,
+        ),
+        guest,
+      );
+    },
+    [applyUser],
+  );
+
   React.useEffect(() => {
     let alive = true;
     (async () => {
-      try {
-        const [users, sessionId, guest] = await Promise.all([loadUsers(), loadSessionId(), getGuestId()]);
-        const found = sessionId ? (users.find((u) => u.id === sessionId) ?? null) : null;
-        if (alive) {
-          setGuestId(guest);
-          applyUser(found ? toPublicUser(found) : null, guest);
-        }
-      } catch {
-        if (alive) applyUser(null, 'guest');
-      } finally {
-        if (alive) setReady(true);
-      }
+      const guest = await getGuestId();
+      if (!alive) return;
+      setGuestId(guest);
+      const { data } = await supabase.auth.getSession();
+      if (!alive) return;
+      await hydrateFromSession(data.session, guest);
+      if (alive) setReady(true);
     })();
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      void getGuestId().then((guest) => hydrateFromSession(session, guest));
+    });
+
     return () => {
       alive = false;
+      sub.subscription.unsubscribe();
     };
-  }, [applyUser]);
-
-  const persistSession = React.useCallback(
-    async (account: UserAccount | null) => {
-      await saveSessionId(account?.id ?? null);
-      applyUser(account ? toPublicUser(account) : null, guestId);
-    },
-    [applyUser, guestId],
-  );
+  }, [hydrateFromSession]);
 
   const signUp = React.useCallback<AuthContextValue['signUp']>(
     async ({ name, email, phone, password }) => {
@@ -79,44 +107,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return 'E-mail inválido.';
       if (digits(ph).length < 10) return 'Telefone inválido.';
       if (password.length < 6) return 'A senha precisa ter pelo menos 6 caracteres.';
-      const users = await loadUsers();
-      if (users.some((u) => u.email === em)) return 'Este e-mail já tem conta.';
-      const salt = await newSalt();
-      const account: UserAccount = {
-        id: Crypto.randomUUID(),
-        name: n,
+
+      const { data, error } = await supabase.auth.signUp({
         email: em,
-        phone: ph,
-        salt,
-        passwordHash: await hashPassword(password, salt),
-        createdAt: Date.now(),
-      };
-      await saveUsers([...users, account]);
-      await migrateGuestToUser(guestId, { id: account.id, name: account.name });
-      await persistSession(account);
+        password,
+        options: { data: { name: n, phone: ph } },
+      });
+      if (error) return authErrorMessage(error);
+      if (!data.session) {
+        return 'Conta criada. Se o e-mail de confirmação estiver ligado, abra o link e depois entre.';
+      }
+      await migrateGuestToUser(guestId, { id: data.session.user.id, name: n });
       return null;
     },
-    [guestId, persistSession],
+    [guestId],
   );
 
   const signIn = React.useCallback<AuthContextValue['signIn']>(
     async (email, password) => {
       const em = normEmail(email);
-      const users = await loadUsers();
-      const found = users.find((u) => u.email === em);
-      if (!found) return 'E-mail ou senha incorretos.';
-      const ok = await passwordsMatch(password, found.salt, found.passwordHash);
-      if (!ok) return 'E-mail ou senha incorretos.';
-      await migrateGuestToUser(guestId, { id: found.id, name: found.name });
-      await persistSession(found);
+      const { data, error } = await supabase.auth.signInWithPassword({ email: em, password });
+      if (error) return authErrorMessage(error);
+      if (data.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('name')
+          .eq('id', data.user.id)
+          .maybeSingle();
+        await migrateGuestToUser(guestId, {
+          id: data.user.id,
+          name: profile?.name || data.user.user_metadata?.name || 'Você',
+        });
+      }
       return null;
     },
-    [guestId, persistSession],
+    [guestId],
   );
 
   const signOut = React.useCallback(async () => {
-    await persistSession(null);
-  }, [persistSession]);
+    await supabase.auth.signOut();
+  }, []);
 
   const updateProfile = React.useCallback<AuthContextValue['updateProfile']>(
     async ({ name, phone, password }) => {
@@ -128,48 +158,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (password != null && password.length > 0 && password.length < 6) {
         return 'A senha precisa ter pelo menos 6 caracteres.';
       }
-      const users = await loadUsers();
-      const idx = users.findIndex((u) => u.id === user.id);
-      if (idx < 0) return 'Conta não encontrada.';
-      const current = users[idx];
-      let salt = current.salt;
-      let passwordHash = current.passwordHash;
+
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ name: n, phone: ph, updated_at: new Date().toISOString() })
+        .eq('id', user.id);
+      if (profileError) return authErrorMessage(profileError);
+
       if (password) {
-        salt = await newSalt();
-        passwordHash = await hashPassword(password, salt);
+        const { error: passError } = await supabase.auth.updateUser({
+          password,
+          data: { name: n, phone: ph },
+        });
+        if (passError) return authErrorMessage(passError);
+      } else {
+        await supabase.auth.updateUser({ data: { name: n, phone: ph } });
       }
-      const next: UserAccount = { ...current, name: n, phone: ph, salt, passwordHash };
-      const copy = [...users];
-      copy[idx] = next;
-      await saveUsers(copy);
-      const revs = await loadReviews();
-      await saveReviews(revs.map((r) => (r.userId === user.id ? { ...r, author: n } : r)));
-      await persistSession(next);
+
+      applyUser({ ...user, name: n, phone: ph }, guestId);
       return null;
     },
-    [persistSession, user],
+    [applyUser, guestId, user],
   );
 
-  const resetPassword = React.useCallback<AuthContextValue['resetPassword']>(async (email, newPassword) => {
+  const resetPassword = React.useCallback<AuthContextValue['resetPassword']>(async (email) => {
     const em = normEmail(email);
-    if (newPassword.length < 6) return 'A senha precisa ter pelo menos 6 caracteres.';
-    const users = await loadUsers();
-    const idx = users.findIndex((u) => u.email === em);
-    if (idx < 0) return 'Não encontramos uma conta com esse e-mail.';
-    const salt = await newSalt();
-    const copy = [...users];
-    copy[idx] = { ...copy[idx], salt, passwordHash: await hashPassword(newPassword, salt) };
-    await saveUsers(copy);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return 'E-mail inválido.';
+    const { error } = await supabase.auth.resetPasswordForEmail(em);
+    if (error) return authErrorMessage(error);
     return null;
   }, []);
 
   const deleteAccount = React.useCallback(async () => {
     if (!user) return;
-    const users = await loadUsers();
-    await saveUsers(users.filter((u) => u.id !== user.id));
+    await supabase.rpc('delete_own_account');
     await purgeUserData(user.id);
-    await persistSession(null);
-  }, [persistSession, user]);
+    await supabase.auth.signOut();
+  }, [user]);
 
   const value = React.useMemo<AuthContextValue>(
     () => ({

@@ -13,7 +13,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomNav } from '../../src/components/BottomNav';
-import { Field, PasswordField, PrimaryButton } from '../../src/auth/fields';
+import { Field, PrimaryButton } from '../../src/auth/fields';
 import { useAuth } from '../../src/auth/AuthProvider';
 import { colors } from '../../src/theme/colors';
 import { fonts, fontSize, spacing } from '../../src/theme/tokens';
@@ -23,21 +23,20 @@ export default function Recuperar() {
   const router = useRouter();
   const { resetPassword } = useAuth();
   const [email, setEmail] = React.useState('');
-  const [password, setPassword] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
 
   const onSubmit = async () => {
     setBusy(true);
     setError(null);
-    const msg = await resetPassword(email, password);
+    const msg = await resetPassword(email);
     setBusy(false);
     if (msg) {
       setError(msg);
       return;
     }
-    Alert.alert('Senha atualizada', 'Agora você já pode entrar com a nova senha.', [
-      { text: 'Entrar', onPress: () => router.replace('/perfil') },
+    Alert.alert('E-mail enviado', 'Se essa conta existir, você recebe um link para criar uma senha nova.', [
+      { text: 'Ok', onPress: () => router.back() },
     ]);
   };
 
@@ -59,7 +58,7 @@ export default function Recuperar() {
           <Text style={styles.kicker}>Conta</Text>
           <Text style={styles.title}>Recuperar senha</Text>
           <Text style={styles.subtitle}>
-            Informe o e-mail da conta e escolha uma senha nova. Sem servidor de e-mail, a troca acontece neste aparelho.
+            Informe o e-mail da conta. Enviamos um link para você definir uma senha nova.
           </Text>
 
           <View style={{ gap: spacing.md, marginTop: spacing.lg }}>
@@ -70,14 +69,8 @@ export default function Recuperar() {
               keyboardType="email-address"
               placeholder="voce@email.com"
             />
-            <PasswordField
-              label="Nova senha"
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Mínimo 6 caracteres"
-            />
             {error ? <Text style={styles.formError}>{error}</Text> : null}
-            <PrimaryButton label="Definir nova senha" onPress={onSubmit} busy={busy} />
+            <PrimaryButton label="Enviar link" onPress={onSubmit} busy={busy} />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

@@ -13,8 +13,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 
-import { placeById } from '../../src/data/places';
+import { usePlaces } from '../../src/places/PlacesProvider';
 import { categoryById } from '../../src/data/categories';
+import { Place } from '../../src/data/types';
 import { Rating, PriceLevel, Tag } from '../../src/components/ui';
 import { LinearGradientView } from '../../src/components/Gradient';
 import { useFavorites } from '../../src/favorites/FavoritesProvider';
@@ -40,6 +41,7 @@ export default function PlaceDetail() {
   const [photo, setPhoto] = React.useState(0);
   const { isFavorite, toggle } = useFavorites();
   const { labelFor } = useLocation();
+  const { placeById } = usePlaces();
 
   const place = placeById(String(id));
   if (!place) {
@@ -245,7 +247,7 @@ export default function PlaceDetail() {
   );
 }
 
-function bottomPrice(place: ReturnType<typeof placeById>) {
+function bottomPrice(place: Place | undefined) {
   if (!place) return '';
   if (place.ticket) return place.ticket.split('—')[0].replace('A partir de', '').trim();
   return `${'$'.repeat(place.priceRange)} · por pessoa`;

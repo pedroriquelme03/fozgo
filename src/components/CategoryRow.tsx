@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { categories, Category } from '../data/categories';
+import { Category } from '../data/categories';
+import { useCategories } from '../categories/CategoriesProvider';
 import { CategoryId } from '../data/types';
 import { colors } from '../theme/colors';
 import { fonts, fontSize, radius, spacing } from '../theme/tokens';
@@ -14,6 +15,7 @@ export function CategoryRow({
   selected: CategoryId | null;
   onSelect: (id: CategoryId | null) => void;
 }) {
+  const { categories } = useCategories();
   return (
     <ScrollView
       horizontal
@@ -54,6 +56,7 @@ export function CategoryRow({
 
 /** Grade de categorias (4 por linha) para a seção "Explorar por categoria". */
 export function CategoryGrid({ onSelect }: { onSelect: (c: Category) => void }) {
+  const { categories } = useCategories();
   return (
     <View style={styles.grid}>
       {categories.map((cat) => (

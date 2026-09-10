@@ -7,6 +7,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider } from '../src/auth/AuthProvider';
 import { LocationProvider } from '../src/integrations/LocationProvider';
 import { PlacesProvider } from '../src/places/PlacesProvider';
+import { CategoriesProvider } from '../src/categories/CategoriesProvider';
+import { ItinerariesProvider } from '../src/itineraries/ItinerariesProvider';
 import { FavoritesProvider } from '../src/favorites/FavoritesProvider';
 import { ReviewsProvider } from '../src/reviews/ReviewsProvider';
 import { useAppFonts } from '../src/hooks/useAppFonts';
@@ -21,6 +23,8 @@ export default function RootLayout() {
         <AuthProvider>
         <LocationProvider>
         <PlacesProvider>
+        <CategoriesProvider>
+        <ItinerariesProvider>
         <FavoritesProvider>
         <ReviewsProvider>
         <StatusBar style="dark" />
@@ -46,6 +50,8 @@ export default function RootLayout() {
         )}
         </ReviewsProvider>
         </FavoritesProvider>
+        </ItinerariesProvider>
+        </CategoriesProvider>
         </PlacesProvider>
         </LocationProvider>
         </AuthProvider>

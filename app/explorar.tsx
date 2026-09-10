@@ -19,14 +19,13 @@ import { LinearGradientView } from '../src/components/Gradient';
 import { Rating, SectionHeader } from '../src/components/ui';
 
 import {
-  itineraries,
-  itineraryById,
   makeCustomItinerary,
   addCustomItinerary,
   getCustomItineraries,
   subscribeCustomItineraries,
   Itinerary,
 } from '../src/data/itineraries';
+import { useItineraries } from '../src/itineraries/ItinerariesProvider';
 import { usePlaces } from '../src/places/PlacesProvider';
 import { Place } from '../src/data/types';
 import { colors } from '../src/theme/colors';
@@ -36,6 +35,7 @@ export default function Explorar() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { mustVisitPlaces, imperdiblePlaces } = usePlaces();
+  const { itineraries, itineraryById } = useItineraries();
   const { roteiro, novo } = useLocalSearchParams<{ roteiro?: string; novo?: string }>();
   const mine = React.useSyncExternalStore(subscribeCustomItineraries, getCustomItineraries, getCustomItineraries);
   const [selectedId, setSelectedId] = React.useState<string | null>(null);

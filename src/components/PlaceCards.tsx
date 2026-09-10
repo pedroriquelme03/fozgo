@@ -6,7 +6,7 @@ import { LinearGradientView } from './Gradient';
 import { Rating, PriceLevel, Pill, Tag } from './ui';
 import { FavoriteHeart } from './FavoriteHeart';
 import { Place } from '../data/types';
-import { categoryById } from '../data/categories';
+import { useCategories } from '../categories/CategoriesProvider';
 import { useLocation } from '../integrations/LocationProvider';
 import { colors } from '../theme/colors';
 import { fonts, fontSize, radius, spacing, shadow } from '../theme/tokens';
@@ -15,6 +15,7 @@ const BLUR = 'L6PZfSi_.AyE_3t7t7R**0o#DgR4';
 
 /** Card grande de destaque (carrossel horizontal). */
 export function FeaturedCard({ place, onPress }: { place: Place; onPress: () => void }) {
+  const { categoryById } = useCategories();
   const cat = categoryById(place.category);
   const { labelFor } = useLocation();
   return (
@@ -52,6 +53,7 @@ export function FeaturedCard({ place, onPress }: { place: Place; onPress: () => 
 
 /** Card horizontal para listas (imagem à esquerda). */
 export function PlaceCard({ place, onPress }: { place: Place; onPress: () => void }) {
+  const { categoryById } = useCategories();
   const cat = categoryById(place.category);
   const { labelFor } = useLocation();
   return (
@@ -87,6 +89,7 @@ export function PlaceCard({ place, onPress }: { place: Place; onPress: () => voi
 
 /** Card compacto vertical (grade de recomendados). */
 export function CompactCard({ place, onPress, width }: { place: Place; onPress: () => void; width: number }) {
+  const { categoryById } = useCategories();
   const cat = categoryById(place.category);
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.compact, { width }, pressed && { opacity: 0.92 }]}>

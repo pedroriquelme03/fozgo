@@ -2,10 +2,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import { AppState } from 'react-native';
 
-const url = process.env.EXPO_PUBLIC_SUPABASE_URL ?? 'https://nnsperehtnqwpbwugjxb.supabase.co';
-const anonKey =
-  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ??
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uc3BlcmVodG5xd3Bid3VnanhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg5ODcxOTcsImV4cCI6MjEwNDU2MzE5N30.gYRHzAv2XsgLv8ZCu7RfoL7kMU0rCZi41vXpQBPe1Gg';
+// Lidas do .env pelo Expo em tempo de build (EXPO_PUBLIC_* são inlined pelo Metro).
+// Ao alterar o .env, reinicie o bundler (expo start -c).
+const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!url || !anonKey) {
+  throw new Error(
+    'Supabase não configurado: defina EXPO_PUBLIC_SUPABASE_URL e EXPO_PUBLIC_SUPABASE_ANON_KEY no arquivo .env (veja .env.example).',
+  );
+}
 
 export const supabase = createClient(url, anonKey, {
   auth: {

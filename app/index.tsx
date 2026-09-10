@@ -26,7 +26,7 @@ import { useFavorites } from '../src/favorites/FavoritesProvider';
 import { openLocationSettings, useLocation } from '../src/integrations/LocationProvider';
 
 import { usePlaces } from '../src/places/PlacesProvider';
-import { categoryById } from '../src/data/categories';
+import { useCategories } from '../src/categories/CategoriesProvider';
 import { CategoryId, Place } from '../src/data/types';
 import { colors } from '../src/theme/colors';
 import { fonts, fontSize, radius, spacing } from '../src/theme/tokens';
@@ -42,6 +42,7 @@ export default function Home() {
   const [filterOpen, setFilterOpen] = React.useState(false);
   const { ids } = useFavorites();
   const { places, featuredPlaces } = usePlaces();
+  const { categoryById } = useCategories();
   const { label, granted, kmTo, refresh } = useLocation();
 
   const openPlace = (p: Place) => router.push(`/place/${p.id}`);
@@ -65,7 +66,7 @@ export default function Home() {
     if (filters.sort === 'avaliacao') list = [...list].sort((a, b) => b.rating - a.rating);
     if (filters.sort === 'distancia') list = [...list].sort((a, b) => kmTo(a) - kmTo(b));
     return list;
-  }, [places, query, category, filters, kmTo]);
+  }, [places, query, category, filters, kmTo, categoryById]);
 
   // Grade responsiva de recomendados
   const gutter = spacing.xl;

@@ -2,6 +2,8 @@ import { Place } from '../data/types';
 
 export type Coords = { lat: number; lng: number };
 
+export const FOZ_CENTER: Coords = { lat: -25.5478, lng: -54.5839 };
+
 const EARTH_KM = 6371;
 
 export function haversineKm(a: Coords, b: Coords) {

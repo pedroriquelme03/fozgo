@@ -31,20 +31,23 @@ function tabFromPath(pathname: string) {
 export function BottomNav({
   active,
   onChange,
+  accentColor,
 }: {
   active?: string;
   onChange?: (key: string) => void;
+  accentColor?: string;
 }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const pathname = usePathname();
   const current = active ?? tabFromPath(pathname);
+  const accent = accentColor ?? colors.teal;
 
   const onPress = (key: (typeof tabs)[number]['key'], href: Href | null) => {
     onChange?.(key);
     if (!href) return;
     const already =
-      (key === 'inicio' && (pathname === '/' || pathname === '/index')) ||
+      (key === 'inicio' && (pathname === '/' || pathname === '/index' || pathname === '/home-2')) ||
       (key === 'explorar' && pathname.startsWith('/explorar')) ||
       (key === 'favoritos' && pathname.startsWith('/favoritos')) ||
       (key === 'perfil' && (pathname === '/perfil' || pathname === '/perfil/'));
@@ -57,13 +60,28 @@ export function BottomNav({
       {tabs.map((t) => {
         const on = current === t.key;
         return (
-          <Pressable key={t.key} style={styles.tab} onPress={() => onPress(t.key, t.href)}>
-            <Ionicons
-              name={(on ? t.icon : `${t.icon}-outline`) as keyof typeof Ionicons.glyphMap}
-              size={23}
-              color={on ? colors.teal : colors.textFaint}
-            />
-            <Text style={[styles.label, on && { color: colors.teal, fontFamily: fonts.bodySemi }]}>{t.label}</Text>
+          <Pressable
+            key={t.key}
+            style={styles.tab}
+            onPress={() => onPress(t.key, t.href)}
+            accessibilityRole="button"
+            accessibilityLabel={t.label}
+            accessibilityState={{ selected: on }}
+          >
+            {({ pressed, hovered }: { pressed: boolean; hovered?: boolean }) => {
+              const hot = on || (!!accentColor && (pressed || !!hovered));
+              const color = hot ? accent : colors.textFaint;
+              return (
+                <>
+                  <Ionicons
+                    name={(on ? t.icon : `${t.icon}-outline`) as keyof typeof Ionicons.glyphMap}
+                    size={23}
+                    color={color}
+                  />
+                  <Text style={[styles.label, hot && { color: accent, fontFamily: fonts.bodySemi }]}>{t.label}</Text>
+                </>
+              );
+            }}
           </Pressable>
         );
       })}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Platform, ImageStyle } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradientView } from './Gradient';
@@ -12,6 +12,17 @@ import { colors } from '../theme/colors';
 import { fonts, fontSize, radius, spacing, shadow } from '../theme/tokens';
 
 const BLUR = 'L6PZfSi_.AyE_3t7t7R**0o#DgR4';
+
+const COMPACT_SHADOW = Platform.select({
+  ios: {
+    shadowColor: colors.shadow,
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  android: { elevation: 1 },
+  default: { boxShadow: '0 1px 4px rgba(12,42,67,0.06)' },
+});
 
 /** Card grande de destaque (carrossel horizontal). */
 export function FeaturedCard({ place, onPress }: { place: Place; onPress: () => void }) {
@@ -88,24 +99,56 @@ export function PlaceCard({ place, onPress }: { place: Place; onPress: () => voi
 }
 
 /** Card compacto vertical (grade de recomendados). */
-export function CompactCard({ place, onPress, width }: { place: Place; onPress: () => void; width: number }) {
+export function CompactCard({
+  place,
+  onPress,
+  width,
+  showBadge = true,
+  caption,
+  imageStyle,
+  titleNumberOfLines = 1,
+}: {
+  place: Place;
+  onPress: () => void;
+  width: number;
+  showBadge?: boolean;
+  caption?: string;
+  imageStyle?: ImageStyle;
+  titleNumberOfLines?: number;
+}) {
   const { categoryById } = useCategories();
   const cat = categoryById(place.category);
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.compact, { width }, pressed && { opacity: 0.92 }]}>
-      <View>
-        <Image source={place.photos[0]} style={styles.compactImg} contentFit="cover" placeholder={BLUR} transition={200} />
-        <View style={styles.compactBadge}>
-          <Ionicons name={cat.icon as keyof typeof Ionicons.glyphMap} size={12} color={cat.base} />
+      <View style={styles.compactClip}>
+        <View>
+          <Image
+            source={place.photos[0]}
+            style={[styles.compactImg, imageStyle]}
+            contentFit="cover"
+            placeholder={BLUR}
+            transition={200}
+          />
+          {showBadge && (
+            <View style={styles.compactBadge}>
+              <Ionicons name={cat.icon as keyof typeof Ionicons.glyphMap} size={12} color={cat.base} />
+            </View>
+          )}
         </View>
-      </View>
-      <View style={styles.compactBody}>
-        <Text style={styles.compactTitle} numberOfLines={1}>
-          {place.name}
-        </Text>
-        <View style={styles.cardTopRow}>
-          <Rating value={place.rating} size={fontSize.xs} />
-          <PriceLevel level={place.priceRange} size={fontSize.xs} />
+        <View style={styles.compactBody}>
+          <Text style={styles.compactTitle} numberOfLines={titleNumberOfLines}>
+            {place.name}
+          </Text>
+          {caption != null ? (
+            <Text style={styles.compactCaption} numberOfLines={1}>
+              {caption}
+            </Text>
+          ) : (
+            <View style={styles.cardTopRow}>
+              <Rating value={place.rating} size={fontSize.xs} />
+              <PriceLevel level={place.priceRange} size={fontSize.xs} />
+            </View>
+          )}
         </View>
       </View>
     </Pressable>
@@ -173,8 +216,11 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
+    ...(COMPACT_SHADOW as object),
+  },
+  compactClip: {
+    borderRadius: radius.lg,
     overflow: 'hidden',
-    ...(shadow.soft as object),
   },
   compactImg: { width: '100%', height: 120, backgroundColor: colors.surfaceAlt },
   compactBadge: {
@@ -190,4 +236,5 @@ const styles = StyleSheet.create({
   },
   compactBody: { padding: spacing.md, gap: 6 },
   compactTitle: { fontFamily: fonts.heading, fontSize: fontSize.md, color: colors.navy },
+  compactCaption: { fontFamily: fonts.body, fontSize: fontSize.sm, color: colors.textMuted },
 });

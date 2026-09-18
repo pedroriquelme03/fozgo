@@ -36,6 +36,8 @@ export default function RootLayout() {
           }}
         >
           <Stack.Screen name="index" options={{ animation: 'none' }} />
+          <Stack.Screen name="home" options={{ animation: 'none' }} />
+          <Stack.Screen name="home-2" options={{ animation: 'none' }} />
           <Stack.Screen name="explorar" options={{ animation: 'none' }} />
           <Stack.Screen name="favoritos" options={{ animation: 'none' }} />
           <Stack.Screen name="perfil" options={{ animation: 'none' }} />
